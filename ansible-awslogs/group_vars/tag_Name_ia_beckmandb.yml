@@ -1,0 +1,9 @@
+---
+remote_user: ansible
+ansible_user: ansible
+ansible_port: 22
+private_key_file: $HOME/.ssh/baxter/ec2-baxter-uat.pem
+ansible_python_interpreter: /usr/bin/python2.6
+customers:
+  - beckman
+  - implementation

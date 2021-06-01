@@ -1,0 +1,13 @@
+---
+- name: Removing awslogs agent
+  # hosts: tag_Name_dev_stepan, tag_Name_dev_stepandb, tag_Name_ia_beckman, tag_Name_ia_beckmandb
+  hosts: tag_Name_oberondb
+  serial: 1
+  any_errors_fatal: true
+  gather_facts: no
+  become: true
+  become_method: sudo
+
+  roles:
+    - awslogs-agent-remove
+

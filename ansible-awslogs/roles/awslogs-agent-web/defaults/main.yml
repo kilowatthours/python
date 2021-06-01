@@ -1,0 +1,68 @@
+---
+env_prod: "{{ env_prod }}"
+default_log_group_name: "{hostname}"
+server_log: "server"
+dsl_ws_log: "dsl-ws"
+access_log: "access"
+user_log: "user"
+report_requests_log: "report-requests"
+batch_log: "batch"
+prophet_analytics_log: "prophet-analytics"
+startfeeder_log: "startfeeder"
+regex_pattern: '^\d\d\:\d\d\:\d\d\,\d\d\d'
+
+awslogs_prophet_web_logs:
+  - file: /var/log/messages
+    format: "%b %d %H:%M:%S"
+    stream_name: "syslog"
+
+  - file: /home/prophet/shared/logs/{{server_log}}*.log
+    format: "%Y-%m-%d %H:%M:%S.%f"
+    stream_name: "{{server_log}}.log"
+
+  - file: /home/prophet/shared/logs/{{dsl_ws_log}}*.log
+    format: "%Y-%m-%d %H:%M:%S.%f"
+    stream_name: "{{dsl_ws_log}}.log"
+
+  - file: /home/prophet/shared/logs/{{access_log}}*.log
+    format: "%Y-%m-%d %H:%M:%S.%f"
+    stream_name: "{{access_log}}.log"
+
+  - file: /home/prophet/shared/logs/{{user_log}}*.log
+    format: "%Y-%m-%d %H:%M:%S.%f"
+    stream_name: "{{user_log}}.log"
+
+  - file: /home/prophet/shared/logs/{{report_requests_log}}*.log
+    format: "%Y-%m-%d %H:%M:%S.%f"
+    stream_name: "{{report_requests_log}}.log"
+
+  - file: /home/prophet/shared/logs/{{batch_log}}*.log
+    format: "%Y-%m-%d %H:%M:%S.%f"
+    time_zone: "LOCAL"
+    stream_name: "{{batch_log}}.log"
+
+  - file: /home/prophet/shared/logs/{{prophet_analytics_log}}*.log
+    format: "%Y-%m-%d %H:%M:%S.%f" ## 2021-04-18 17:45:49.000385
+    stream_name: "{{prophet_analytics_log}}.log"
+
+  - file: /home/prophet/shared/logs/{{startfeeder_log}}*.log
+    format: "%Y-%m-%d %H:%M:%S.%f"
+    multi_line_start_pattern: "{{ regex_pattern | quote }}"
+    stream_name: "{{startfeeder_log}}.log"
+
+  - file: /home/prophet/shared/logs/WebCastellum*.log
+    format: "%b %d, %Y %H:%M:%S %p" ## Apr 19, 2021 5:51:51 AM
+    stream_name: "webcastellum.log"
+
+awslogs_prophet_web_feed_logs:
+  - file: /home/prophet/shared/logs/*Orders.log
+    format: "%a %b %d %H:%M:%S CDT %Y" ##Sun Apr 18 21:00:15
+    stream_name: "feed_orders.log"
+
+  - file: /home/prophet/shared/logs/*Daily.log
+    format: "%a %b %d %H:%M:%S CDT %Y" ##Sun Apr 18 21:00:15
+    stream_name: "feed_daily.log"
+
+  - file: /home/prophet/shared/logs/*Weekly.log
+    format: "%a %b %d %H:%M:%S"  ##Sun Apr 18 21:00:15
+    stream_name: "feed_weekly.log"

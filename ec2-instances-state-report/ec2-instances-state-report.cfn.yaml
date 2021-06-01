@@ -1,0 +1,146 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'Function for generating / sending EC2 instance state reports'
+
+Parameters:
+  SESSendFrom:
+    Type: String
+    Default: 'instance-state-report@baxterplanning.com'
+    Description: 'SES send from email address. Will not email if blank'
+  SESSendProdtest:
+    Type: String
+    Description: 'List of comma seperated emails to send a Prodtest to'
+  SESSendCombined:
+    Type: String
+    Description: 'List of comma seperated emails to send a Combined report to'
+  DefaultRegion:
+    Type: String
+    Default: 'us-west-2'
+    Description: 'Default region for SES and other boto3 connections'
+  S3Bucket:
+    Type: String
+    Default: 'cf-templates-oregon-bp'
+    Description: 'S3 Bucket to store the report in. default: cf-templates-oregon-bp'
+  JiraUsername:
+    Type: String
+    Default: 'slitsevych'
+    Description: 'JIRA username'
+  JiraSecretARN:
+    Type: String
+    Default: 'arn:aws:secretsmanager:us-west-2:461796779995:secret:instance_report/jira_pass-7sHDv0'
+    Description: 'ARN of Secret with JIRA password'
+  BitbucketCommit:
+    Type: String
+    Description: 'Short sha commit hash for code.zip files'
+  EnvAlias:
+    Type: String
+    Default: 'PROD'
+    Description: 'Define an environment specific for stack and function'
+
+Resources:
+  EC2InstancesStateReport:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 'ec2-instances-state-report'
+      AutoPublishAlias: 
+        Ref: EnvAlias
+      Description: 'Function for generating / sending monthly EC2 instances state report'
+      MemorySize: 512
+      Timeout: 300
+      Handler: main.main_handler
+      Runtime: python3.6
+      CodeUri:
+        Bucket:
+          Ref: S3Bucket
+        Key:
+          Fn::Sub: ec2-instances-state-report/code-${BitbucketCommit}.zip
+
+      Layers:
+      - arn:aws:lambda:us-west-2:461796779995:layer:ec2-instances-state-report:3
+
+      Role:
+        Fn::GetAtt:
+        - EC2InstancesStateReportIAMRole
+        - Arn
+
+      Environment:
+        Variables:
+          S3_BUCKET:
+            Ref: S3Bucket
+          SES_SEND_PRODTEST:
+            Ref: SESSendProdtest
+          SES_SEND_COMBINED:
+            Ref: SESSendCombined
+          SES_SEND_FROM:
+            Ref: SESSendFrom
+          DEFAULT_REGION:
+            Ref: DefaultRegion
+          JIRA_USERNAME:
+            Ref: JiraUsername
+          JIRA_SECRET_NAME:
+            Ref: JiraSecretARN
+          COMMIT:
+            Ref: BitbucketCommit
+          ENV:
+            Ref: EnvAlias
+
+      Events:
+        WeeklyEvent:
+          Properties:
+            Schedule:
+              Fn::Sub: cron(0 14 ? * MON *)
+          Type: Schedule
+
+  EC2InstancesStateReportIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: 
+        Fn::Sub: ec2-instances-state-report-role-${EnvAlias}
+      Path: /
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      
+      Policies:
+      - PolicyName:
+          Fn::Sub: ec2-instances-state-report-policy-${EnvAlias}
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - ses:SendEmail
+            - ses:SendRawEmail
+            Resource: '*'
+          - Effect: Allow
+            Action:
+            - ec2:DescribeInstances
+            - rds:DescribeDBInstances
+            Resource: '*'
+          - Effect: Allow
+            Action:
+            - ce:*
+            Resource: '*'
+          - Effect: Allow
+            Action:
+            - secretsmanager:*
+            Resource:
+              Ref: JiraSecretARN
+          - Effect: Allow
+            Action:
+            - s3:PutObject
+            - s3:PutObjectAcl
+            Resource:
+              Fn::Sub: arn:aws:s3:::${S3Bucket}/*
+
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: AllowLambdaServiceToAssumeRole
+          Effect: Allow
+          Action:
+          - sts:AssumeRole
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+
+Outputs: {}

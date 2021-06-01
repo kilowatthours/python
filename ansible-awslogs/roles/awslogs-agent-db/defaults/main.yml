@@ -1,0 +1,44 @@
+---
+default_log_group_name: "{hostname}"
+customers: "{{ customers }}"
+regex_pattern_customer: '^Begin'
+regex_pattern_common: '^\d\d\:\d\d\:\d\d'
+multi_line_start_pattern_common: "{{ regex_pattern_common | quote }}"
+multi_line_start_pattern_customer: "{{ regex_pattern_customer | quote }}"
+
+awslogs_prophet_syslog:
+  - file: /var/log/messages
+    format: "%b %d %H:%M:%S"
+    group_name: "{hostname}"
+    stream_name: "syslog"
+
+awslogs_prophet_customer_db_logs:
+  time_zone: LOCAL
+  encoding: utf-8
+  initial_position: start_of_file
+  buffer_duration: 5000
+  group_name: "{hostname}"
+
+customer_logs:
+    - replen_process
+    - replen_out
+    - replen_init
+    - ppcTrial
+    - min_approval
+    - load_histories_daily
+    - load_ias
+    - hit_rate
+    - full_run
+    - flush_oneway
+    - excess_report
+    - cross_load_histories
+    - create_orders_outbound
+
+common_logs:
+    - arc_sum
+    - clean_up_dirs
+    - daily_cube_builds
+    - month_roll-startMonthRoll
+    - planner_code_remapping
+    - start_batch
+

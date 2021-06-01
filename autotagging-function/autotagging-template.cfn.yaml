@@ -1,0 +1,521 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: 'AWS::Serverless-2016-10-31'
+Description: 'Stack for Lambda AutoTagOwner function resources in Oregon region'
+
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: Prerequisites
+        Parameters:
+          - IsCloudTrailEnabled
+    ParameterLabels:
+      IsCloudTrailEnabled:
+        default: >-
+          Is CloudTrail already enabled in this region? 
+          CloudTrail is a requirement for Cloudwatch Events. 
+          If not enabled, please enable CloudTrail before proceeding.
+
+Parameters:
+  IsCloudTrailEnabled:
+    Description: 'Specify if CloudTrail is enabled in the us-west-2 region'
+    Type: String
+    Default: 'Yes'
+    AllowedValues: ['Yes', 'No']
+  FunctionS3Bucket:
+    Type: String
+    AllowedValues: [cf-templates-oregon-bp, cf-templates-virginia]
+    Description: 'S3 bucket location of code.zip and templates.'
+  BitbucketCommit:
+    Type: String
+    Description: 'Short sha commit hash for code.zip files.'
+  EnvAlias:
+    Type: String
+    Default: 'PROD'
+    Description: 'Define an environment specific for stack and function.'
+  Region:
+    Type: String
+    AllowedValues: [oregon, virginia]
+    Description: 'Define an environment specific for stack and function.'
+
+Conditions:
+  CreateResources: !Equals 
+    - !Ref IsCloudTrailEnabled
+    - 'Yes'
+
+Globals:
+  Function:
+    Tags:
+      Env: ops
+      Department: Operations
+
+Resources:
+  FunctionAutoTagOregon:
+    Type: 'AWS::Serverless::Function'
+    Condition: CreateResources
+    Properties:
+      FunctionName: 
+        Fn::Sub: autotag-function-${Region}
+      Description: 'Function tags resources in response to Events in Oregon us-west-2 region'
+      Timeout: 360
+      MemorySize: 128
+      Runtime: python3.8
+      Handler: main.lambda_handler
+      AutoPublishAlias: 
+        Ref: EnvAlias
+      CodeUri:
+        Bucket:
+          Ref: FunctionS3Bucket
+        Key:
+          Fn::Sub: autotag_template/code-${BitbucketCommit}.zip
+
+      Tags:
+        Env: ops
+        Department: Operations
+
+      Environment:
+        Variables:
+          ENV:
+            Ref: EnvAlias
+          COMMIT:
+            Ref: BitbucketCommit
+
+      Role:
+        Fn::GetAtt:
+        - AutotaggingLambdaIAMRole
+        - Arn
+
+      Events:
+        AutoTagTriggerMain:
+          Properties:
+            Pattern:
+              detail:
+                eventName:
+                - CloneStack
+                - CopyImage
+                - CopySnapshot
+                - CreateApplication
+                - CreateApplicationVersion
+                - CreateAutoScalingGroup
+                - CreateBackupPlan
+                - CreateBackupVault
+                - CreateBucket
+                - CreateCluster
+                - CreateDBInstance
+                - CreateDeliveryStream
+                - CreateDistribution
+                - CreateEnvironment
+                - CreateFileSystem
+                - CreateFunction20150331
+                - CreateImage
+                - CreateKey
+                - CreateLoadBalancer
+                - CreateMountTarget
+                - CreateNodegroup
+                - CreateQueue
+                - CreateRepository
+                - CreateSecurityGroup
+                - CreateServer
+                - CreateService
+                - CreateSnapshot
+                - CreateStack
+                - CreateStream
+                - CreateTargetGroup
+                - CreateTopic
+                - CreateUserPool
+                - CreateVolume
+                - CreateWorkspaces
+                - ImportSnapshot
+                - PutRule
+                - RegisterImage
+                - RegisterTaskDefinition
+                - RunInstances
+                - RunJobFlow
+                - RunTask
+                - StartInstances
+                - StopInstances
+                - UpdateApplication
+                - UpdateBackupPlan
+                - UpdateEnvironment
+                - UpdateFileSystem
+                - UpdateFunctionCode20150331v2
+                - UpdateFunctionConfiguration20150331v2
+                - UpdateServer
+                - UpdateService
+                - UpdateUserPool
+                eventSource:
+                - autoscaling.amazonaws.com
+                - backup.amazonaws.com
+                - cloudformation.amazonaws.com
+                - cloudfront.amazonaws.com
+                - cognito-idp.amazonaws.com
+                - ec2.amazonaws.com
+                - ecr.amazonaws.com
+                - ecs.amazonaws.com
+                - eks.amazonaws.com
+                - eks.amazonaws.com
+                - elasticbeanstalk.amazonaws.com
+                - elasticfilesystem.amazonaws.com
+                - elasticloadbalancing.amazonaws.com
+                - elasticmapreduce.amazonaws.com
+                - events.amazonaws.com
+                - firehose.amazonaws.com
+                - fsx.amazonaws.com
+                - iam.amazonaws.com
+                - kinesis.amazonaws.com
+                - kinesisanalytics.amazonaws.com
+                - kms.amazonaws.com
+                - lambda.amazonaws.com
+                - opsworks-cm.amazonaws.com
+                - opsworks.amazonaws.com
+                - rds.amazonaws.com
+                - redshift.amazonaws.com
+                - s3.amazonaws.com
+                - sns.amazonaws.com
+                - sqs.amazonaws.com
+                - workspaces.amazonaws.com
+              detail-type:
+              - AWS API Call via CloudTrail
+          Type: CloudWatchEvent
+
+        AutoTagTriggerSecondary:
+          Properties:
+            Pattern:
+              detail:
+                eventName:
+                - AllocateAddress
+                - CreateAccount
+                - CreateActivity
+                - CreateCacheCluster
+                - CreateCapacityReservation
+                - CreateCustomerGateway
+                - CreateDhcpOptions
+                - CreateDocument
+                - CreateEgressOnlyInternetGateway
+                - CreateInternetGateway
+                - CreateKeyPair
+                - CreateLaunchTemplate
+                - CreateLaunchTemplateVersion
+                - CreateManagedPrefixList
+                - CreateNatGateway
+                - CreateNetworkAcl
+                - CreateNetworkInterface
+                - CreateProduct
+                - CreatePortfolio
+                - CreatePlacementGroup
+                - CreateRouteTable
+                - CreateSecret
+                - CreateSubnet
+                - CreateStateMachine
+                - CreateTrail
+                - CreateTransitGateway
+                - CreateTransitGatewayRouteTable
+                - CreateVpc
+                - CreateVpcEndpoint
+                - CreateVpcEndpointServiceConfiguration
+                - CreateVpcPeeringConnection
+                - CreateVpnConnection
+                - CreateVpnGateway
+                - DeregisterInstancesFromLoadBalancer
+                - DeregisterTargets
+                - ImportCertificate
+                - ModifyCapacityReservation
+                - ModifyInstanceAttribute
+                - ModifyLaunchTemplate
+                - PutParameter
+                - RebootInstances
+                - RegisterInstancesWithLoadBalancer
+                - RegisterTargets
+                - RequestCertificate
+                - RequestSpotInstances
+                - UpdateDocument
+                - UpdateDocumentDefaultVersion
+                - UpdateProduct
+                - UpdatePortfolio
+                - UpdateSecret
+                - UpdateStateMachine
+                - UpdateTrail
+                - UpdateVault
+                eventSource:
+                - acm.amazonaws.com
+                - cloudtrail.amazonaws.com
+                - ec2.amazonaws.com
+                - elasticache.amazonaws.com
+                - elasticloadbalancing.amazonaws.com
+                - glacier.amazonaws.com
+                - organizations.amazonaws.com
+                - secretsmanager.amazonaws.com
+                - servicecatalog.amazonaws.com
+                - ssm.amazonaws.com
+                - spot.amazonaws.com
+                - states.amazonaws.com
+              detail-type:
+              - AWS API Call via CloudTrail
+          Type: CloudWatchEvent
+
+        AutoTagTriggerThird:
+          Properties:
+            Pattern:
+              detail:
+                eventName:
+                - CreateApi
+                - CreateApiKey
+                - CreateApplication
+                - CreateDBCluster
+                - CreateDBClusterSnapshot
+                - CreateDBClusterParameterGroup
+                - CreateDBInstanceReadReplica
+                - CreateDBParameterGroup
+                - CreateDBProxy
+                - CreateDBSubnetGroup
+                - CreateDBSnapshot
+                - CreateDeploymentConfig
+                - CreateDeploymentGroup
+                - CreateDomain
+                - CreateDomainName
+                - CreateEventSubscription
+                - CreateGlobalCluster
+                - CreateOptionGroup
+                - CreatePipeline
+                - CreateProject
+                - CreateRestApi
+                - CreateRepository
+                - CreateStage
+                - CreateUsagePlan
+                - CreateVpcLink
+                - GenerateClientCertificate
+                - ImportApi
+                - ModifyDBCluster
+                - ModifyDBClusterParameterGroup
+                - ModifyDBInstance
+                - ModifyDBParameterGroup
+                - ModifyDBProxy
+                - ModifyDBSubnetGroup
+                - ModifyEventSubscription
+                - ModifyGlobalCluster
+                - ModifyOptionGroup
+                - RebootDBInstance
+                - StartDBInstance
+                - StopDBInstance
+                - UpdateApi
+                - UpdateApiKey
+                - UpdateClientCertificate
+                - UpdateDeploymentGroup
+                - UpdateDomainName
+                - UpdateProject
+                - UpdateRestApi
+                - UpdateRepository
+                - UpdateRepositoryName
+                - UpdateRepositoryDescription
+                - UpdateStage
+                - UpdateUsagePlan
+                - UpdateVpcLink
+                - UpdatePipeline
+                eventSource:
+                - apigateway.amazonaws.com
+                - codeartifact.amazonaws.com
+                - codebuild.amazonaws.com
+                - codecommit.amazonaws.com
+                - codedeploy.amazonaws.com
+                - codepipeline.amazonaws.com
+                - codestar.amazonaws.com
+                - rds.amazonaws.com
+              detail-type:
+              - AWS API Call via CloudTrail
+          Type: CloudWatchEvent
+
+        AutoTagTriggerFourth:
+          Properties:
+            Pattern:
+              detail:
+                eventName:
+                - CreateComputeEnvironment
+                - CreateCrawler
+                - CreateFlow
+                - CreateGlobalTable
+                - CreateHealthCheck
+                - CreateHostedZone
+                - CreateGraphqlApi
+                - CreateJob
+                - CreateJobQueue
+                - CreateLogGroup
+                - CreateOpenIDConnectProvider
+                - CreatePolicy
+                - CreatePolicyVersion
+                - CreateRegistry
+                - CreateResolverEndpoint
+                - CreateResolverRule
+                - CreateRole
+                - CreateSAMLProvider
+                - CreateSchema
+                - CreateTable
+                - CreateTrigger
+                - CreateWorkflow
+                - CreateUser
+                - PutInsightRule
+                - PutMetricAlarm
+                - RegisterJobDefinition
+                - StartCrawler
+                - SubmitJob
+                - UpdateComputeEnvironment
+                - UpdateCrawler
+                - UpdateFlow
+                - UpdateHealthCheck
+                - UpdateGlobalTable
+                - UpdateGraphqlApi
+                - UpdateJob
+                - UpdateJobQueue
+                - UpdateRegistry
+                - UpdateResolverEndpoint
+                - UpdateResolverRule
+                - UpdateRole
+                - UpdateSchema
+                - UpdateTable
+                - UpdateTrigger
+                - UpdateWorkflow
+                eventSource:
+                - appflow.amazonaws.com
+                - appsync.amazonaws.com
+                - batch.amazonaws.com
+                - dynamodb.amazonaws.com
+                - glue.amazonaws.com
+                - iam.amazonaws.com
+                - logs.amazonaws.com
+                - monitoring.amazonaws.com
+                - route53.amazonaws.com
+                - route53domains.amazonaws.com
+                - route53resolver.amazonaws.com
+              detail-type:
+              - AWS API Call via CloudTrail
+          Type: CloudWatchEvent
+
+  AutotaggingLambdaIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: 
+        Fn::Sub: autotagging-function-role-${Region}
+      Path: /
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      
+      Policies:
+      - PolicyName:
+          Fn::Sub: autotagging-function-policy-${Region}
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Sid: LambdaAutoTagEventPolicyCloudtrail
+            Effect: Allow
+            Action:
+            - 'cloudtrail:LookupEvents'
+            Resource:
+            - '*'
+          - Sid: LambdaAutoTagEventTaggingPermissions
+            Effect: Allow
+            Action:
+            - 'acm:AddTagsToCertificate'
+            - 'acm:DescribeCertificate'
+            - 'apigateway:*'
+            - 'appflow:TagResource'
+            - 'appsync:TagResource'
+            - 'autoscaling:CreateOrUpdateTags'
+            - 'autoscaling:Describe*'
+            - 'backup:TagResource'
+            - 'batch:DescribeComputeEnvironments'
+            - 'batch:TagResource'
+            - 'codeartifact:TagResource'
+            - 'codebuild:UpdateProject'
+            - 'codecommit:TagResource'
+            - 'codedeploy:BatchGetProjects'
+            - 'codedeploy:TagResource'
+            - 'codepipeline:GetPipeline'
+            - 'codepipeline:TagResource'
+            - 'codestar:TagProject'
+            - 'cloudformation:Describe*'
+            - 'cloudformation:UpdateStack'
+            - 'cloudfront:TagResource'
+            - 'cloudtrail:AddTags'
+            - 'cloudwatch:TagResource'
+            - 'cognito-idp:TagResource'
+            - 'dynamodb:ListTagsOfResource'
+            - 'dynamodb:TagResource'
+            - 'ec2:CreateTags'
+            - 'ec2:Describe*'
+            - 'ecr:TagResource'
+            - 'ecs:TagResource'
+            - 'ecs:Describe*'
+            - 'ecs:ListTasks'
+            - 'eks:TagResource'
+            - 'elasticache:AddTagsToResource'
+            - 'elasticache:DescribeCacheClusters'
+            - 'elasticbeanstalk:AddTags'
+            - 'elasticbeanstalk:Describe*'
+            - 'elasticfilesystem:CreateTags'
+            - 'elasticfilesystem:DescribeFileSystems'
+            - 'elasticfilesystem:TagResource'
+            - 'elasticloadbalancing:AddTags'
+            - 'elasticloadbalancing:Describe*'
+            - 'elasticmapreduce:AddTags'
+            - 'events:TagResource'
+            - 'firehose:TagDeliveryStream'
+            - 'fsx:TagResource'
+            - 'glacier:AddTagsToVault'
+            - 'glue:TagResource'
+            - 'iam:Tag*'
+            - 'kinesis:AddTagsToStream'
+            - 'kinesisanalytics:TagResource'
+            - 'kms:TagResource'
+            - 'lambda:ListTags'
+            - 'lambda:TagResource'
+            - 'logs:CreateLogGroup'
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+            - 'logs:TagLogGroup'
+            - 'opsworks-cm:TagResource'
+            - 'opsworks:DescribeInstances'
+            - 'opsworks:DescribeStacks'
+            - 'opsworks:ListTags'
+            - 'opsworks:TagResource'
+            - 'organizations:DescribeAccount'
+            - 'organizations:DescribeCreateAccountStatus'
+            - 'organizations:TagResource'
+            - 'rds:AddTagsToResource'
+            - 'rds:Describe*'
+            - 'rds:ListTagsForResource'
+            - 'redshift:CreateTags'
+            - 'redshift:DescribeClusters'
+            - 'route53:ChangeTagsForResource'
+            - 'route53domains:UpdateTagsForDomain'
+            - 'route53resolver:TagResource'
+            - 's3:GetBucketTagging'
+            - 's3:PutBucketTagging'
+            - 'secretsmanager:TagResource'
+            - 'servicecatalog:TagResource'
+            - 'servicecatalog:UpdateProduct'
+            - 'servicecatalog:UpdatePortfolio'
+            - 'ssm:AddTagsToResource'
+            - 'sns:TagResource'
+            - 'sqs:TagQueue'
+            - 'states:TagResource'
+            - 'workspaces:CreateTags'
+            Resource: '*'
+          - Sid: LogsPerms
+            Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: 'arn:aws:logs:*:*:*'
+
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: AllowLambdaServiceToAssumeRole
+          Effect: Allow
+          Action:
+          - sts:AssumeRole
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+
+Outputs: {}

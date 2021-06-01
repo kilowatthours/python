@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: 'AWS::Serverless-2016-10-31'
+Description: 'Function for sending email notifications informing about newly added Walkme videos.'
+
+Parameters:
+  SESSendFrom:
+    Type: String
+    Default: 'walkme-videos-notification@baxterplanning.com'
+    AllowedValues: [walkme-videos-notification@baxterplanning.com]
+    Description: Default From_Email address for SES.
+  SESRegion:
+    Type: String
+    Default: 'us-west-2'
+    AllowedValues: [us-west-2]
+    Description: Default region of SES.
+  WalkmeS3Bucket:
+    Type: String
+    Default: 'bp-walkme-videostorage'
+    AllowedValues: [bp-walkme-videostorage]
+    Description: S3 bucket location with walkme video storage.
+  FunctionS3Bucket:
+    Type: String
+    Default: 'cf-templates-oregon-bp'
+    AllowedValues: [cf-templates-oregon-bp]
+    Description: S3 bucket location of code.zip and templates.
+  SESSendTo:
+    Type: String
+    Default: 'slitsevych@baxterplanning.com'
+    Description: List of email addresses to send notifications to.
+  EnvAlias:
+    Type: String
+    AllowedValues: [STAGING, PROD]
+    Description: Define an environment specific for stack and function.
+  BitbucketCommit:
+    Type: String
+    Description: Short sha commit hash for code.zip files.
+
+Resources:
+  WalkmeVideosNotification:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName:
+        Fn::Sub: WalkmeVideosNotification-${EnvAlias}
+      AutoPublishAlias: 
+        Ref: EnvAlias
+      MemorySize: 128
+      Timeout: 30
+      Handler: lambda.main_handler
+      Runtime: python3.6
+      Description: 'Function notifies about new videos file added to the S3 bucket.'
+      CodeUri:
+        Bucket:
+          Ref: FunctionS3Bucket
+        Key:
+          Fn::Sub: walkme-videos-notification/code-${BitbucketCommit}.zip
+      
+      Role:
+        Fn::GetAtt:
+        - FnWalkmeVideosNotificationIAMRole
+        - Arn
+
+      Tags:
+        Env: ops
+        Department: Operations
+      
+      Environment:
+        Variables:
+          S3_BUCKET:
+            Ref: WalkmeS3Bucket
+          SES_SEND_TO:
+            Ref: SESSendTo
+          SES_SEND_FROM:
+            Ref: SESSendFrom
+          SES_REGION:
+            Ref: SESRegion
+          ENV:
+            Ref: EnvAlias
+          COMMIT:
+            Ref: BitbucketCommit
+
+  FnWalkmeVideosNotificationIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: 
+        Fn::Sub: walkme-videos-notification-role-${EnvAlias}
+      Path: /
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+      Policies:
+      - PolicyName: 'walkme-videos-notification-policy'
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - ses:SendEmail
+            - ses:SendRawEmail
+            Resource: '*'
+          - Effect: Allow
+            Action:
+            - s3:Get*
+            - s3:List*
+            Resource:
+              Fn::Sub: arn:aws:s3:::${WalkmeS3Bucket}/*
+
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: AllowLambdaServiceToAssumeRole
+          Effect: Allow
+          Action:
+          - sts:AssumeRole
+          Principal:
+            Service:
+            - lambda.amazonaws.com  
+
+Outputs: {}

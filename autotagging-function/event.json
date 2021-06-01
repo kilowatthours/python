@@ -1,0 +1,92 @@
+{
+    "id": "cdc73f9d-aea9-11e3-9d5a-835b769c0d9c",
+    "detail-type": "TestEvent",
+    "source": "aws.events",
+    "account": "461796779995",
+    "time": "1970-01-01T00:00:00Z",
+    "region": "us-west-2",
+    "resources": [
+      "arn:aws:events:us-west-2:461796779995:rule/autotag-function-oregon-FunctionAutoTagOregonCloud-1LR019BY51HUU"
+    ],
+    "detail": {
+        "awsRegion": "us-west-2",
+        "eventID": "8e4924e5-a68e-4256-91e2-ef984fe63c39",
+        "eventName": "CreateFunction20150331",
+        "eventSource": "lambda.amazonaws.com",
+        "eventTime": "2020-10-26T20:37:31Z",
+        "eventType": "AwsApiCall",
+        "eventVersion": "1.05",
+        "requestID": "470b13e3-96d3-4f72-85e8-eb61447b5a76",
+        "requestParameters": {
+            "code": {
+                "s3Bucket": "cf-templates-oregon-bp",
+                "s3Key": "autotag_template/code.zip"
+            },
+            "description": "Function tags resources in response to Events in Oregon us-west-2 region",
+            "environment": {},
+            "fileSystemConfigs": [],
+            "functionName": "autotag-function-oregon",
+            "handler": "main.lambda_handler",
+            "memorySize": 128,
+            "publish": false,
+            "role": "arn:aws:iam::461796779995:role/autotag-function-oregon-FunctionAutoTagVirginiaRol-1B81UQ4AH5IR0",
+            "runtime": "python3.8",
+            "tags": {
+                "Department": "Operations",
+                "Env": "ops",
+                "Name": "autotag-function-virginia",
+                "aws:cloudformation:logical-id": "FunctionAutoTagVirginia",
+                "aws:cloudformation:stack-id": "arn:aws:cloudformation:us-west-2:461796779995:stack/autotag-function-oregon/ed6209f0-17ca-11eb-9e16-0608031ccff5",
+                "aws:cloudformation:stack-name": "autotag-function-oregon",
+                "lambda:createdBy": "SAM"
+            },
+            "timeout": 60
+        },
+        "responseElements": {
+            "codeSha256": "KC7R/Gzj8jMWczxtqPBdMP2uIV4Pn9/vF5rPlzB41NI=",
+            "codeSize": 6434,
+            "description": "Function tags resources in response to Events in Oregon us-west-2 region",
+            "environment": {},
+            "functionArn": "arn:aws:lambda:us-west-2:461796779995:function:autotag-function-oregon",
+            "functionName": "autotag-function-oregon",
+            "handler": "main.lambda_handler",
+            "lastModified": "2020-10-26T20:37:31.778+0000",
+            "lastUpdateStatus": "Successful",
+            "memorySize": 128,
+            "packageType": "Zip",
+            "revisionId": "f4997424-4b9e-4d8c-b67f-499180bccc26",
+            "role": "arn:aws:iam::461796779995:role/autotag-function-oregon-FunctionAutoTagVirginiaRol-1B81UQ4AH5IR0",
+            "runtime": "python3.8",
+            "state": "Active",
+            "timeout": 60,
+            "tracingConfig": {
+                "mode": "PassThrough"
+            },
+            "version": "$LATEST"
+        },
+        "sourceIPAddress": "cloudformation.amazonaws.com",
+        "userAgent": "cloudformation.amazonaws.com",
+        "userIdentity": {
+            "accessKeyId": "ASIAIGESC44D7NEG6P7A",
+            "accountId": "461796779995",
+            "arn": "arn:aws:sts::461796779995:assumed-role/JumpCloudAdmin/slitsevych@baxterplanning.com",
+            "invokedBy": "cloudformation.amazonaws.com",
+            "principalId": "AROAJIH5B7WEEC22SBMY2:slitsevych@baxterplanning.com",
+            "sessionContext": {
+                "attributes": {
+                    "creationDate": "2020-10-26T18:33:01Z",
+                    "mfaAuthenticated": "false"
+                },
+                "sessionIssuer": {
+                    "accountId": "461796779995",
+                    "arn": "arn:aws:iam::461796779995:role/JumpCloudAdmin",
+                    "principalId": "AROAJIH5B7WEEC22SBMY2",
+                    "type": "Role",
+                    "userName": "JumpCloudAdmin"
+                },
+                "webIdFederationData": {}
+            },
+            "type": "AssumedRole"
+        }
+    }
+}

@@ -1,0 +1,25 @@
+---
+- name: "awslogs | check if the service exists"
+  stat: path=/etc/init.d/awslogs
+  register: service_status
+
+- name: "upload remove-agent.sh script"
+  copy:
+    src=remove-agent.sh
+    dest=/root/remove-agent.sh
+    owner=root
+    group=root
+    mode=0755
+    force=yes
+  when: service_status.stat.exists == true
+
+- name: "run remove-agent.sh script"
+  ansible.builtin.shell: /root/remove-agent.sh REMOTE
+  args:
+    executable: /bin/bash
+
+  register: remove_agent
+
+- name: "print output"
+  debug: var=remove_agent
+

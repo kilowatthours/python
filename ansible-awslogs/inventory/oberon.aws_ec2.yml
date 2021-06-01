@@ -1,0 +1,18 @@
+---
+plugin: aws_ec2
+boto_profile: baxter
+regions:
+  - us-west-2
+filters:
+  instance-state-name: running
+  tag:Department: Production
+  tag:Env: 
+    - prd
+  tag:Name: 
+    - oberon
+hostnames:
+  - private-ip-address
+  - tag:Name
+keyed_groups:
+  - prefix: tag
+    key: tags

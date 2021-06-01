@@ -1,0 +1,180 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'Function for generating / sending cost reports'
+
+Parameters:
+  SESSendFrom:
+    Type: String
+    Default: 'cost-reports@baxterplanning.com'
+    AllowedValues: [cost-reports@baxterplanning.com]
+    Description: 'Email thats authorised in this account for SES sending. Will not email if blank'
+  SESSendTo:
+    Type: String
+    Description: 'List of comma seperated emails to send to'
+  SESRegion:
+    Type: String
+    Default: 'us-west-2'
+    AllowedValues: [us-west-2]
+    Description: 'Region you have configured SES in (default: us-west-2)'
+  S3Bucket:
+    Type: String
+    Default: 'cf-templates-oregon-bp'
+    AllowedValues: [cf-templates-oregon-bp]
+    Description: 'S3 Bucket to store the report in. default: cf-templates-oregon-bp'
+  AccountLabel:
+    Type: String
+    Default: 'Email'
+    AllowedValues: [Email, Name]
+    Description: 'Email | Name, default: Email'
+  CurrentMonth:
+    Type: String
+    Default: false
+    AllowedValues: [true, false]
+    Description: 'true | false for if current partial month included'
+  LastMonthOnly:
+    Type: String
+    Default: true
+    AllowedValues: [true, false]
+    Description: 'true | false for if last month only'
+  LastMonthsPeriod:
+    Type: String
+    Default: ''
+    AllowedValues: [1-12, '']
+    Description: 'Number of last full months to generate report for'
+  IncSupport:
+    Type: String
+    Default: true
+    AllowedValues: [true, false]
+    Description: 'true | false for if would like to include support fees'
+  DayOfMonth:
+    Type: Number
+    Default: 3
+    AllowedValues: [3, 12]
+    Description: 'DayOfMonth for Schedule, default 3 - use 12 if you want to report refunds and finalised Enterprise Support'
+  ExactMonth:
+    Type: String
+    Default: ''
+    AllowedPattern: "^(1[0-2]|[1-9])$|^$"
+    Description: 'Exact month for reports aiming to output data for a precise month; use only digits [1-12] and in conjunction with ExactYear'
+  ExactYear:
+    Type: String
+    Default: ''
+    AllowedValues: [2020, 2021, '']
+    Description: 'Exact year for reports aiming to output data for a precise month; either 2020 or 2021'
+  BitbucketCommit:
+    Type: String
+    Description: 'Short sha commit hash for code.zip files'
+  EnvAlias:
+    Type: String
+    Default: 'PROD'
+    Description: 'Define an environment specific for stack and function'
+
+Resources:
+  CostExplorerReport:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 'CostExplorerReportLambda'
+      AutoPublishAlias: 
+        Ref: EnvAlias
+      Description: 'Function for generating / sending monthly cost report'
+      MemorySize: 256
+      Timeout: 60
+      Handler: lambda.main_handler
+      Runtime: python3.6
+      CodeUri:
+        Bucket:
+          Ref: S3Bucket
+        Key:
+          Fn::Sub: aws-cost-explorer-report/code-${BitbucketCommit}.zip
+
+      Layers:
+      - arn:aws:lambda:us-west-2:461796779995:layer:aws-cost-explorer-report:3
+
+      Role:
+        Fn::GetAtt:
+        - CostExplorerReportLambdaIAMRole
+        - Arn
+
+      Environment:
+        Variables:
+          S3_BUCKET:
+            Ref: S3Bucket
+          SES_SEND:
+            Ref: SESSendTo
+          SES_FROM:
+            Ref: SESSendFrom
+          SES_REGION:
+            Ref: SESRegion
+          ACCOUNT_LABEL:
+            Ref: AccountLabel
+          CURRENT_MONTH:
+            Ref: CurrentMonth
+          LAST_MONTH_ONLY:
+            Ref: LastMonthOnly
+          LAST_MONTHS_PERIOD:
+            Ref: LastMonthsPeriod
+          INC_SUPPORT: 
+            Ref: IncSupport
+          EXACT_MONTH: 
+            Ref: ExactMonth
+          EXACT_YEAR: 
+            Ref: ExactYear
+          COMMIT:
+            Ref: BitbucketCommit
+          ENV:
+            Ref: EnvAlias
+
+      Events:
+        MonthlyEvent:
+          Properties:
+            Schedule:
+              Fn::Sub: cron(0 1 ${DayOfMonth} * ? *)
+          Type: Schedule
+
+  CostExplorerReportLambdaIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: 
+        Fn::Sub: cost-explorer-function-role-${EnvAlias}
+      Path: /
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      
+      Policies:
+      - PolicyName:
+          Fn::Sub: cost-explorer-function-policy-${EnvAlias}
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - ce:*
+            Resource: '*'
+          - Effect: Allow
+            Action:
+            - organizations:ListAccounts
+            Resource: '*'
+          - Effect: Allow
+            Action:
+            - ses:SendEmail
+            - ses:SendRawEmail
+            Resource: '*'
+          - Effect: Allow
+            Action:
+            - s3:PutObject
+            - s3:PutObjectAcl
+            Resource:
+              Fn::Sub: arn:aws:s3:::${S3Bucket}/*
+
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: AllowLambdaServiceToAssumeRole
+          Effect: Allow
+          Action:
+          - sts:AssumeRole
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+
+Outputs: {}

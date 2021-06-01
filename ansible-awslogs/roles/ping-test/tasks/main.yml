@@ -1,0 +1,7 @@
+---
+- name: ping host
+  ping:
+  register: ping
+
+- name: print ping results 
+  debug: var=ping

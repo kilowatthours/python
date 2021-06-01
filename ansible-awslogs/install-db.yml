@@ -1,0 +1,13 @@
+---
+- name: Installing CW awslogs agent for Prophet-db logs
+  # hosts: tag_Name_dev_stepandb, tag_Name_ia_beckmandb, tag_Name_oberondb
+  hosts: tag_Name_oberondb
+  serial: 1
+  any_errors_fatal: true
+  gather_facts: no
+  become: true
+  become_method: sudo
+  
+  tasks:
+    - include_role:
+        name: awslogs-agent-db
